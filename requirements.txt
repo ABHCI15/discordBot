@@ -1,0 +1,5 @@
+google-generativeai
+profanity
+python-dotenv
+langchain 
+py-cord
