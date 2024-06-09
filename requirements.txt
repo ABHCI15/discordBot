@@ -3,3 +3,16 @@ profanity
 python-dotenv
 langchain 
 py-cord
+python-dotenv
+langchain_google_genai
+langchain_core
+langchain_community
+langchain-chroma
+pypdf
+mendeleev
+sqlalchemy
+pprint
+rapidocr-onnxruntime
+langchain_experimental
+pathlib
+pymupdf
