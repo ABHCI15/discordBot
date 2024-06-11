@@ -33,7 +33,7 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader
 from time import sleep
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 
 book_list = os.listdir("chembooks")
@@ -46,22 +46,22 @@ embeddings = HuggingFaceEmbeddings(
     model_kwargs=model_kwargs, 
     encode_kwargs=encode_kwargs 
 )
+def store_books():
+    text_splitter = SemanticChunker(embeddings=embeddings,breakpoint_threshold_type="standard_deviation")
+    split = []
 
-text_splitter = SemanticChunker(embeddings=embeddings,breakpoint_threshold_type="standard_deviation")
-split = []
-
-for book in book_list:
-    file_name = Path(os.path.join("chembooks", book))
-    loader = PyMuPDFLoader(file_name,extract_images=False)
-    documents = loader.load()
-    split.append(text_splitter.split_documents(documents))
-    sleep(5)
-# documents = PyPDFDirectoryLoader("chembooks").load()
-# split = text_splitter.split_documents(documents)
-all_splits = [doc for sublist in split for doc in sublist]
-global db
-db = Chroma.from_documents(documents=all_splits, embedding=embeddings, persist_directory="./chem_chroma_db")
-# 
+    for book in book_list:
+        file_name = Path(os.path.join("chembooks", book))
+        loader = PyMuPDFLoader(file_name,extract_images=False)
+        documents = loader.load()
+        split.append(text_splitter.split_documents(documents))
+        sleep(5)
+    # documents = PyPDFDirectoryLoader("chembooks").load()
+    # split = text_splitter.split_documents(documents)
+    all_splits = [doc for sublist in split for doc in sublist]
+    global db
+    db = Chroma.from_documents(documents=all_splits, embedding=embeddings, persist_directory="./chem_chroma_db")
+    # 
     
         
 # def store_book(bookpath : str):
@@ -99,7 +99,7 @@ chem_ret = StructuredTool.from_function(
 db_chem = SQLDatabase.from_uri("sqlite:///elements.db")
 token = str(os.getenv("TOKEN"))
 bot = discord.Bot()
-llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-pro", temperature=0.1, google_api_key=str(os.getenv("GEMINI")), safety_settings={ HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE, HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE, HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE})
+llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-pro", temperature=0.1, google_api_key=str(os.getenv("GOOGLE_API_KEY")), safety_settings={ HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE, HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE, HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE})
 toolkit = SQLDatabaseToolkit(db=db_chem, llm=llm)
 context = toolkit.get_context()
 tools = [chem_ret]
@@ -124,8 +124,8 @@ async def ping(ctx: discord.ApplicationContext):
     await ctx.respond(f"Pong! {round(bot.latency * 1000)}ms")
 
 @bot.command()
-async def chatOrgo(ctx, message: discord.Option(discord.SlashCommandOptionType.string)):
-    pass
+async def chat(ctx, message: discord.Option(discord.SlashCommandOptionType.string)):
+    await ctx.respond(llm.invoke(message))
     
 
 
