@@ -124,7 +124,7 @@ async def ping(ctx: discord.ApplicationContext):
     await ctx.respond(f"Pong! {round(bot.latency * 1000)}ms")
 
 @bot.command()
-async def chat(ctx, message: discord.Option(discord.SlashCommandOptionType.string)):
+async def chat(ctx, message: discord.Option(discord.SlashCommandOptionType.string)): # type: ignore
     await ctx.respond(llm.invoke(message))
 
 @bot.slash_command(name="quote", description="quote")
@@ -133,6 +133,7 @@ async def get_quote(ctx):
     json_data = json.loads(response.text)
     quote = json_data[0]['q'] + " -" + json_data[0]['a']
     await ctx.respond(quote)
+
 
 
 
