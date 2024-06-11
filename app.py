@@ -31,20 +31,37 @@ from langchain_core.tools import ToolException
 from langchain_core.tools import StructuredTool
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from pathlib import Path
+from langchain_community.document_loaders import PyPDFLoader
+from time import sleep
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 
 book_list = os.listdir("chembooks")
-embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+# embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+modelPath = "BAAI/bge-large-en-v1.5"
+model_kwargs = {'device':'cpu'}
+encode_kwargs = {'normalize_embeddings': True}
+embeddings = HuggingFaceEmbeddings(
+    model_name=modelPath,     
+    model_kwargs=model_kwargs, 
+    encode_kwargs=encode_kwargs 
+)
+
 text_splitter = SemanticChunker(embeddings=embeddings,breakpoint_threshold_type="standard_deviation")
 split = []
+
 for book in book_list:
     file_name = Path(os.path.join("chembooks", book))
-    loader = PyMuPDFLoader(file_name,extract_images=True)
+    loader = PyMuPDFLoader(file_name,extract_images=False)
     documents = loader.load()
     split.append(text_splitter.split_documents(documents))
+    sleep(5)
+# documents = PyPDFDirectoryLoader("chembooks").load()
+# split = text_splitter.split_documents(documents)
+all_splits = [doc for sublist in split for doc in sublist]
 global db
-db = Chroma.from_documents(documents=split, embedding=embeddings, persist_directory="./chem_chroma_db")
-        
+db = Chroma.from_documents(documents=all_splits, embedding=embeddings, persist_directory="./chem_chroma_db")
+# 
     
         
 # def store_book(bookpath : str):
